@@ -14,7 +14,8 @@ MAX_CHARS = 200
 
 
 def main():
-    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+    # Empty string counts as unset: fall back to the default output dir.
+    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output"
     path = os.path.join(out_dir, "entry.txt")
 
     # Self-check gate: 1-200 chars, single line, not whitespace-only.
@@ -45,6 +46,15 @@ def main():
         return 1
     if text.strip() != LINE or text != text.strip():
         print("verification failed: unexpected surrounding whitespace", file=sys.stderr)
+        return 1
+
+    # Second verification: the file must be exactly one line with no
+    # trailing whitespace (a trailing newline or stray space would fail
+    # the single-line gate even when the byte check above passes).
+    lines = text.splitlines()
+    if len(lines) != 1 or lines[0] != LINE or lines[0] != lines[0].rstrip():
+        print("verification failed: file is not exactly one clean line",
+              file=sys.stderr)
         return 1
 
     print("wrote %s (%d chars)" % (path, len(text)))
